@@ -10,6 +10,6 @@ set (hdrs
 set (srcs
 	main.cpp
 )
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcrypto -lgmp")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcrypto")
 add_executable (petya_key_poc ${hdrs} ${srcs})
 
