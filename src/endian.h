@@ -1,3 +1,4 @@
+//from: https://github.com/keeshux/basic-blockchain-programming/
 #ifndef __ENDIAN_H
 #define __ENDIAN_H
 

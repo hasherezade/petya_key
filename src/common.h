@@ -1,3 +1,4 @@
+//from: https://github.com/keeshux/basic-blockchain-programming/
 #ifndef __COMMON_H
 #define __COMMON_H
 
