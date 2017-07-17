@@ -233,9 +233,13 @@ int main(int argc, char* argv[])
     }
 
     const EC_KEY *session_key = load_session_key(session_pub);
+    if (session_key == NULL) {
+        printf("Cannot load victim's public key!\n");
+        return -1;
+    }
     const EC_POINT *pub_key = EC_KEY_get0_public_key(session_key);
     if (pub_key == NULL) {
-        printf("Failed loading victim's public key!\n");
+        printf("Cannot fetch victim's public key!\n");
         return -1;
     }
 //-----
