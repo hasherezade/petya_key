@@ -13,6 +13,8 @@
 #define AES_CHUNK_LEN 16
 #define AES_KEY_LEN 32
 
+typedef enum Petyas { PETYA_RED = 0, PETYA_GOLDEN = 1, PETYA_UNK = -1} Petya_t;
+
 //the private key published by Janus:
 uint8_t priv_bytes[] = {
 	0x38, 0xdd, 0x46, 0x80, 0x1c, 0xe6, 0x18, 0x83, 0x43, 0x30, 0x48, 0xd6, 0xd8, 0xc6, 0xab,
@@ -154,8 +156,26 @@ uint8_t *expand_secret(uint8_t* secret, size_t out_secret_len)
     return secret_data;
 }
 
+Petya_t choose_variant()
+{
+    printf("Choose one of the supported variants:\nr - Red Petya\nd - Goldeneye\n");
+    char code = getchar();
+    Petya_t type = PETYA_UNK;
+    switch (code) {
+       case 'r': type = PETYA_RED; break;
+       case 'd': type = PETYA_GOLDEN; break;
+       default: type = PETYA_UNK; break;
+    };
+    return type;
+}
+
 int main(int argc, char* argv[])
 {
+    Petya_t my_petya = choose_variant();
+    if (my_petya == PETYA_UNK) {
+       printf("Invalid param!\n");
+       return -1;
+    }
     uint8_t priv[PRIV_KEY_SIZE];
     //create a keypair basing on the private key:
     EC_KEY *key = bbp_ec_new_keypair(priv_bytes);
@@ -245,10 +265,14 @@ int main(int argc, char* argv[])
 
     aes_decrypt_chunk(salsa_key, sha512_buffer);
     bbp_print_hex("de-AES Salsa:  ", salsa_key, AES_CHUNK_LEN);
-
-    xor_buffer(salsa_key, AES_CHUNK_LEN, session_pub, PUBLIC_KEY_LEN);
-    bbp_print_hex("de-XOR Salsa:  ", salsa_key, AES_CHUNK_LEN);
-    printf("Salsa string   : %.16s\n", salsa_key);
+    if (my_petya == PETYA_GOLDEN) {
+        bbp_print_hex("[+] Your key   ", salsa_key, AES_CHUNK_LEN);
+    }
+    if (my_petya == PETYA_RED) {
+        xor_buffer(salsa_key, AES_CHUNK_LEN, session_pub, PUBLIC_KEY_LEN);
+        bbp_print_hex("de-XOR Salsa:  ", salsa_key, AES_CHUNK_LEN);
+        printf("[+] Your key   : %.16s\n", salsa_key);
+    }
 //-----
     //cleanup:
     OPENSSL_free(secret);
