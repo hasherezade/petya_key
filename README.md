@@ -8,7 +8,7 @@ It supports:
 Read more about identifying Petyas: https://blog.malwarebytes.com/cybercrime/2017/07/keeping-up-with-the-petyas-demystifying-the-malware-family/
 <hr/>
 <b>
-WARNING: This is an experimental version. Some elements are unfinished.
+WARNING: This is a beta version. In case of any problems, please contact me.
 </b>
 <hr/>
 Usage:
@@ -28,4 +28,4 @@ Choose your version of Petya from the menu. If the given data is valid, you will
 <pre>
 [+] Your key   : TxgTCXnpUPSeR2U7
 </pre>
-3) Before unlocking attempt I strongly recommend you to make a dump of the full disks. Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
+3) <b>Before unlocking attempt I strongly recommend you to make a dump of the full disk.</b> Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
