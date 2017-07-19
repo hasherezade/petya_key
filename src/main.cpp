@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <openssl/evp.h>
 #include <openssl/ecdh.h>
@@ -8,6 +9,7 @@
 #include "ec.h"
 #include "common.h"
 #include "aes256.h"
+#include "base58.h"
 
 #define PUBLIC_KEY_LEN 49
 #define AES_CHUNK_LEN 16
@@ -47,7 +49,18 @@ void xor_buffer(uint8_t *buffer, size_t buffer_size, uint8_t *key, size_t key_si
     }
 }
 
-bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t *enc_buf, size_t enc_buf_size)
+size_t truncated_size(const char *str)
+{
+    size_t len = strlen(str);
+    size_t out_size = len;
+    for (size_t i = len - 1; i >= 0; i--) {
+	if (isalnum(str[i])) break;
+        out_size--;
+    }
+    return out_size;
+}
+
+bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t enc_buf[AES_CHUNK_LEN], Petya_t &my_petya)
 {
     FILE *fp = fopen(victim_file, "rb");
     if (!fp) {
@@ -58,22 +71,37 @@ bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY
     size_t file_size = ftell(fp);
     printf("---\n");
     printf("file_size: %d = %#x\n", file_size, file_size);
-    if (file_size < PUBLIC_KEY_LEN) {
-        fclose(fp);
-        printf("File too short!\n");
+
+    fseek(fp, 0, SEEK_SET);
+
+    const size_t max_line = 0x100;
+    char line[max_line] = { 0 };
+    fgets(line, max_line, fp);
+    fclose(fp);
+
+    char* b58_str = line;
+    if (my_petya == PETYA_RED || my_petya == PETYA_GREEN) {
+        b58_str += 2; //ommit the first two characters
+    }
+    size_t b58_len = truncated_size(b58_str);
+    if (my_petya == PETYA_GREEN) {
+       b58_len -= 6; //ommit 6 last characters
+    }
+
+    const size_t max_decoded = 0x100;
+    uint8_t decoded[max_decoded] = { 0 };
+
+    size_t out_len = decode_base58(b58_str, b58_len, decoded, max_decoded);
+    bbp_print_hex("converted  ", decoded, out_len);
+
+    if (out_len < PUBLIC_KEY_LEN + AES_CHUNK_LEN) {
+        printf("Decoded content is too short!\n");
         return false;
     }
 
-    fseek(fp, 0, SEEK_SET);
-    fread(victim_pub_key, 1, PUBLIC_KEY_LEN, fp);
-    fread(enc_buf, 1, enc_buf_size, fp);
+    memcpy(victim_pub_key, decoded, PUBLIC_KEY_LEN);
+    memcpy(enc_buf, decoded + PUBLIC_KEY_LEN, AES_CHUNK_LEN);
 
-    size_t remaining_size = file_size - PUBLIC_KEY_LEN;
-    size_t salsa_size = (remaining_size / AES_CHUNK_LEN) * AES_CHUNK_LEN;
-
-    printf("public key len: %d\n", PUBLIC_KEY_LEN);
-    printf("Encrypted salsa key len: %d\n", file_size - PUBLIC_KEY_LEN);
-    fclose(fp);
     printf("---\n");
     return true;
 }
@@ -229,7 +257,7 @@ int main(int argc, char* argv[])
         printf("[-] Parameter missing! Supply a file containing the raw data from the victim (base58 decoded)\n");
         return -1;
     }
-    if (!load_victim_data(victim_file, session_pub, salsa_key, AES_CHUNK_LEN)) {
+    if (!load_victim_data(victim_file, session_pub, salsa_key, my_petya)) {
         printf("Failed loading victim's data!\n");
         return -1;
     }
@@ -284,7 +312,7 @@ int main(int argc, char* argv[])
     OPENSSL_free(secret);
     OPENSSL_free(to_hash);
     free(pub);
-    /* release keypair */
+    // release keypair
     EC_KEY_free(key);
     return res;
 }
