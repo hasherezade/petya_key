@@ -43,7 +43,14 @@ size_t decode_base58(const char *str, size_t str_size, uint8_t *out_buf, size_t 
 		BN_mul(output, output, base, ctx);
 		BN_add(output, output, op);
 	}
-	size_t res = BN_bn2bin(output, out_buf);
+	//check the output size:
+	size_t output_size = BN_num_bytes(output)*sizeof(uint8_t);
+
+	size_t res = -1;
+	if (out_buf_size >= output_size) {
+		//the buffer lenght is OK, fill the buffer:
+		res = BN_bn2bin(output, out_buf);
+	}
 	//cleanup
 	BN_CTX_end(ctx);
 	BN_CTX_free(ctx);
