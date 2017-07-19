@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
         victim_file = argv[1];
         printf("Victim file: %s\n", victim_file);
     } else {
-        printf("[-] Parameter missing! Supply a file containing the raw data from the victim (base58 decoded)\n");
+        printf("[-] Parameter missing! Supply a file containing the ID from the victim\n");
         return -1;
     }
     if (!load_victim_data(victim_file, session_pub, salsa_key, my_petya)) {
