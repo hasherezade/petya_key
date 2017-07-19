@@ -15,32 +15,17 @@ Usage:
 <pre>
 ./petya_key_poc [victim_data]
 </pre>
-where the victim_data is a Victim ID decoded from Base58, i.e. using the following decoder:</br>
-base58.py: 
-https://gist.github.com/hasherezade/13e17047a4415fc5ef190fb6db3fe9a2</br><br/>
-1) Save your Victim ID (without dashes) in a file (i.e. saved_id.txt) and supply it to the script. Example of the valid file content:
+where the 'victim_data' is a file containing the 'personal decryption code' displayed by the bootlocker</br></br>
+1) Save your 'personal decryption code' as a continuous string, without separators. Example of the valid file content:
 <pre>
 e2NKAXKGX7YFYUHPUuwrcfZ6FUkkYtRUdvzqRUwacPgjMvyYr8mH5Pw4X8Wdt6XgLrK7G7m1TVVeBdVzRDayyHFWp76353A1
 </pre><br/>
-2) Convert it from Base58:<br/>
-<b>For the Red Petya:</b><br/>the first two characters of Base58 string has to be ommitted.</br>
+2) Supply the saved file to the decoder:<br/>
 <pre>
-./base58.py --decode --infile saved_id.txt --skip_b 2
-</pre>
-<b>For the Green Petya:</b><br/>the first two characters and last six characters of Base58 string has to be ommitted.</br>
-<pre>
-./base58.py --decode --infile saved_id.txt --skip_b 2 --skip_e 6
-</pre>
-<b>For the Goldeneye Petya:</b><br/>supply the Victim ID as is</br>
-<pre>
-./base58.py --decode --infile saved_id.txt
-</pre>
-3) Supply the output file to the decoder:<br/>
-<pre>
-./petya_key_poc out.tmp
+./petya_key_poc saved_id.txt
 </pre>
 Choose your version of Petya from the menu. If the given data is valid, you will get your key, i.e:
 <pre>
 [+] Your key   : TxgTCXnpUPSeR2U7
 </pre>
-
+3) Before unlocking attempt I strongly recommend you to make a dump of the full disks. Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
