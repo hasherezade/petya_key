@@ -200,7 +200,6 @@ size_t get_expanded_size(uint8_t *secret, size_t secret_len)
         dif++;
     } while (counter);
 
-    printf("CALC dif: %d = %x\n", dif, dif);
     return (secret_len * 8) - dif;
 }
 
@@ -216,6 +215,34 @@ uint8_t *expand_secret(uint8_t* secret, size_t out_secret_len)
     memcpy(secret_data + secret_offset, secret, out_secret_len);
     bbp_print_hex("secret buffer:        ", secret_data, secret_data_size);
     return secret_data;
+}
+
+bool derive_secret_hash(const EC_POINT *pub_key, EC_KEY *key, uint8_t out_buffer[SHA512_DIGEST_LENGTH])
+{
+    // allocate the memory for the shared secret
+    const size_t secret_len = 0x40;
+    uint8_t *secret = (uint8_t *)OPENSSL_malloc(secret_len);
+    memset(secret, 0, secret_len);
+    if (!secret) {
+        printf("Failed to allocate memory for the secret!\n");
+        return false;
+    }
+
+    // derive the shared secret:
+    size_t out_secret_len = ECDH_compute_key(secret, secret_len, pub_key, key, NULL);
+    printf("Got secret len: %d = %#x\n", out_secret_len, out_secret_len);
+    bbp_print_hex("secret:        ", secret, out_secret_len);
+
+    // expand the secret:
+    uint8_t *to_hash = expand_secret(secret, out_secret_len);
+    size_t to_hash_size = get_expanded_size(secret, out_secret_len);
+    
+    sha512(to_hash, to_hash_size, out_buffer);
+    bbp_print_hex("SHA512:        ", out_buffer, SHA512_DIGEST_LENGTH);
+    printf("---\n");
+    OPENSSL_free(secret);
+    OPENSSL_free(to_hash);
+    return true;
 }
 
 Petya_t choose_variant()
@@ -291,29 +318,13 @@ int main(int argc, char* argv[])
         return -1;
     }
 //-----
-    // allocate the memory for the shared secret
-    const size_t secret_len = 0x40;
-    uint8_t *secret = (uint8_t *)OPENSSL_malloc(secret_len);
-    memset(secret, 0, secret_len);
-    if (!secret) {
-        printf("Failed to allocate memory for the secret!\n");
-        return -1;
-    }
-
-    // derive the shared secret:
-    size_t out_secret_len = ECDH_compute_key(secret, secret_len, pub_key, key, NULL);
-    printf("Got secret len: %d = %#x\n", out_secret_len, out_secret_len);
-    bbp_print_hex("secret:        ", secret, out_secret_len);
-
-    // expand the secret:
-    uint8_t *to_hash = expand_secret(secret, out_secret_len);
-    size_t to_hash_size = get_expanded_size(secret, out_secret_len);
+    bbp_print_hex("enc. Salsa:    ", salsa_key, AES_CHUNK_LEN);
 
     uint8_t sha512_buffer[SHA512_DIGEST_LENGTH] = {0};
-    sha512(to_hash, to_hash_size, sha512_buffer);
-    bbp_print_hex("SHA512:        ", sha512_buffer, SHA512_DIGEST_LENGTH);
-    printf("---\n");
-    bbp_print_hex("enc. Salsa:    ", salsa_key, AES_CHUNK_LEN);
+    if (!derive_secret_hash(pub_key, key, sha512_buffer)) {
+        printf("Cannot derive the secret!\n");
+        return -1;
+    }
 
     aes_decrypt_chunk(salsa_key, sha512_buffer);
     bbp_print_hex("de-AES Salsa:  ", salsa_key, AES_CHUNK_LEN);
@@ -331,8 +342,6 @@ int main(int argc, char* argv[])
     }
 //-----
     //cleanup:
-    OPENSSL_free(secret);
-    OPENSSL_free(to_hash);
     // release keypair
     EC_KEY_free(key);
     return res;
