@@ -1,3 +1,8 @@
+/***
+* Petya key decoder
+* CC-BY: hasherezade
+**/
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -19,17 +24,46 @@ typedef enum Petyas { PETYA_RED = 0, PETYA_GREEN = 1, PETYA_GOLDEN = 2, PETYA_UN
 
 //the private key published by Janus:
 uint8_t priv_bytes[] = {
-	0x38, 0xdd, 0x46, 0x80, 0x1c, 0xe6, 0x18, 0x83, 0x43, 0x30, 0x48, 0xd6, 0xd8, 0xc6, 0xab,
-	0x8b, 0xe1, 0x86, 0x54, 0xa2, 0x69, 0x5b, 0x47, 0x23
+    0x38, 0xdd, 0x46, 0x80, 0x1c, 0xe6, 0x18, 0x83, 0x43, 0x30, 0x48, 0xd6, 0xd8, 0xc6, 0xab,
+    0x8b, 0xe1, 0x86, 0x54, 0xa2, 0x69, 0x5b, 0x47, 0x23
 };
 
-//the public key dumped from Petya:
-uint8_t pub_dumped_bytes[] = {
-	0x04, 0xc4, 0x80, 0xaf, 0x98, 0x2b, 0x11, 0x26, 0x9c, 0xb4, 0x38, 0xa0, 0x1c, 0x46, 0x79,
-	0xa8, 0x32, 0x9b, 0x5a, 0x5f, 0x4e, 0x80, 0x0c, 0x86, 0x9e, 0xa3, 0xd5, 0x26, 0x77, 0xf3,
-	0x26, 0x1e, 0xc8, 0x8d, 0xd1, 0x71, 0xec, 0xa5, 0xa9, 0x06, 0x6f, 0x4d, 0x8f, 0x26, 0xdc,
-	0xa6, 0x48, 0xfe, 0xf9
-};
+bool test_janus_privkey(EC_KEY *key)
+{
+    //the public key dumped from Petya:
+    const uint8_t pub_dumped_bytes[] = {
+        0x04, 0xc4, 0x80, 0xaf, 0x98, 0x2b, 0x11, 0x26, 0x9c, 0xb4, 0x38, 0xa0, 0x1c, 0x46, 0x79,
+        0xa8, 0x32, 0x9b, 0x5a, 0x5f, 0x4e, 0x80, 0x0c, 0x86, 0x9e, 0xa3, 0xd5, 0x26, 0x77, 0xf3,
+        0x26, 0x1e, 0xc8, 0x8d, 0xd1, 0x71, 0xec, 0xa5, 0xa9, 0x06, 0x6f, 0x4d, 0x8f, 0x26, 0xdc,
+        0xa6, 0x48, 0xfe, 0xf9
+    };
+    //public key:
+    size_t pub_len = i2o_ECPublicKey(key, NULL);
+    uint8_t *pub = (uint8_t*)calloc(pub_len, sizeof(uint8_t));
+
+    // fetch the public key in uncompressed form:
+    EC_KEY_set_conv_form(key, POINT_CONVERSION_UNCOMPRESSED);
+
+    // pub_copy is needed because i2o_ECPublicKey alters the input pointer   
+    uint8_t *pub_copy = pub;
+    if (i2o_ECPublicKey(key, &pub_copy) != pub_len) {
+        puts("Unable to decode public key");
+        return -1;
+    }
+
+    bbp_print_hex("derived pub  ", pub, pub_len);
+    bbp_print_hex("dumped pub   ", pub_dumped_bytes, sizeof(pub_dumped_bytes));
+    bool is_ok = false;
+    int res = memcmp(pub, pub_dumped_bytes, sizeof(pub_dumped_bytes));
+    if (res == 0) {
+        is_ok = true;
+        printf("[+] Test passed!\n[+] The public key dumped from the malware was derived from the published private key!\n");
+    } else {
+        printf("[-] Test failed!\n");
+    }
+    free(pub);
+    return is_ok;
+}
 
 
 void aes_decrypt_chunk(uint8_t enc_buf[AES_CHUNK_LEN], uint8_t *key)
@@ -54,7 +88,7 @@ size_t truncated_size(const char *str)
     size_t len = strlen(str);
     size_t out_size = len;
     for (size_t i = len - 1; i >= 0; i--) {
-	if (isalnum(str[i])) break;
+        if (isalnum(str[i])) break;
         out_size--;
     }
     return out_size;
@@ -201,11 +235,9 @@ Petya_t choose_variant()
 
 int main(int argc, char* argv[])
 {
-    Petya_t my_petya = choose_variant();
-    if (my_petya == PETYA_UNK) {
-       printf("Invalid param!\n");
-       return -1;
-    }
+    Petya_t my_petya = PETYA_UNK;
+    bool make_test = (argc >= 2) ? false : true;
+
     uint8_t priv[PRIV_KEY_SIZE];
     //create a keypair basing on the private key:
     EC_KEY *key = bbp_ec_new_keypair(priv_bytes);
@@ -219,31 +251,12 @@ int main(int argc, char* argv[])
         puts("Unable to decode private key");
         return -1;
     }
+
     BN_bn2bin(priv_bn, priv);
     bbp_print_hex("priv:        ", priv, sizeof(priv));
 
-    //public key:
-    size_t pub_len = i2o_ECPublicKey(key, NULL);
-    uint8_t *pub = (uint8_t*)calloc(pub_len, sizeof(uint8_t));
-
-    // fetch the public key in uncompressed form:
-    EC_KEY_set_conv_form(key, POINT_CONVERSION_UNCOMPRESSED);
-
-    // pub_copy is needed because i2o_ECPublicKey alters the input pointer   
-    uint8_t *pub_copy = pub;
-    if (i2o_ECPublicKey(key, &pub_copy) != pub_len) {
-        puts("Unable to decode public key");
-        return -1;
-    }
-
-    bbp_print_hex("derived pub  ", pub, pub_len);
-    bbp_print_hex("dumped pub   ", pub_dumped_bytes, sizeof(pub_dumped_bytes));
-
-    int res = memcmp(pub, pub_dumped_bytes, sizeof(pub_dumped_bytes));
-    if (res == 0) {
-        printf("[+] Test passed!\n[+] The public key dumped from the malware was derived from the published private key!\n");
-    } else {
-        printf("[-] Test failed!\n");
+    if (make_test) {
+        test_janus_privkey(key);
     }
 
     uint8_t session_pub[PUBLIC_KEY_LEN] = { 0 };
@@ -256,6 +269,11 @@ int main(int argc, char* argv[])
     } else {
         printf("[-] Parameter missing! Supply a file containing the ID from the victim\n");
         return -1;
+    }
+    my_petya = choose_variant();
+    if (my_petya == PETYA_UNK) {
+       printf("Invalid param!\n");
+       return -1;
     }
     if (!load_victim_data(victim_file, session_pub, salsa_key, my_petya)) {
         printf("Failed loading victim's data!\n");
@@ -299,19 +317,22 @@ int main(int argc, char* argv[])
 
     aes_decrypt_chunk(salsa_key, sha512_buffer);
     bbp_print_hex("de-AES Salsa:  ", salsa_key, AES_CHUNK_LEN);
+
+    int res = -1;
     if (my_petya == PETYA_GOLDEN) {
         bbp_print_hex("[+] Your key   ", salsa_key, AES_CHUNK_LEN);
+        res = 0; //success
     }
-    if (my_petya == PETYA_RED || my_petya == PETYA_GREEN) {
+    else if (my_petya == PETYA_RED || my_petya == PETYA_GREEN) {
         xor_buffer(salsa_key, AES_CHUNK_LEN, session_pub, PUBLIC_KEY_LEN);
         bbp_print_hex("de-XOR Salsa:  ", salsa_key, AES_CHUNK_LEN);
         printf("[+] Your key   : %.16s\n", salsa_key);
+        res = 0; //success
     }
 //-----
     //cleanup:
     OPENSSL_free(secret);
     OPENSSL_free(to_hash);
-    free(pub);
     // release keypair
     EC_KEY_free(key);
     return res;
