@@ -2,8 +2,8 @@
 A decoder for Petya victim keys, using the Janus' masterkey</br>
 It supports:
 + Red Petya
-+ Green Petya (both versions)
-+ Goldeneye Petya
++ Green Petya (both versions) + Mischa
++ Goldeneye (bootlocker + files)
 </br>
 Read more about identifying Petyas: https://blog.malwarebytes.com/cybercrime/2017/07/keeping-up-with-the-petyas-demystifying-the-malware-family/
 <hr/>
@@ -29,3 +29,11 @@ Choose your version of Petya from the menu. If the given data is valid, you will
 [+] Your key   : TxgTCXnpUPSeR2U7
 </pre>
 3) <b>Before unlocking attempt I strongly recommend you to make a dump of the full disk.</b> Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
+<hr/>
+In order to decrypt MFT, supply the generated key to the bootlocker.<br/>
+In order to decrypt <b>files</b> you need supply the key to an appropriate decryption tool.<br/>
+For <b>Mischa</b>:
+https://drive.google.com/open?id=0Bzb5kQFOXkiSWUZ6dndxZkN1YlE
+<br/>
+For <b>Goldeneye</b>:
+https://drive.google.com/open?id=0Bzb5kQFOXkiSdTZkUUYxZ0xEeDg
