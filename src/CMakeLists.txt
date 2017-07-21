@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project (petya_key_poc)
+project (petya_key)
 
 set (hdrs
 	ec.h
@@ -16,5 +16,5 @@ set (srcs
 )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcrypto")
-add_executable (petya_key_poc ${hdrs} ${srcs})
+add_executable (petya_key ${hdrs} ${srcs})
 
