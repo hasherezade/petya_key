@@ -10,10 +10,10 @@
 #include <openssl/evp.h>
 #include <openssl/ecdh.h>
 #include <openssl/sha.h>
+#include <openssl/aes.h>
 
 #include "ec.h"
 #include "common.h"
-#include "aes256.h"
 #include "base58.h"
 
 #define PUBLIC_KEY_LEN 49
@@ -66,14 +66,11 @@ bool test_janus_privkey(EC_KEY *key)
 }
 
 
-void aes_decrypt_chunk(uint8_t enc_buf[AES_CHUNK_LEN], uint8_t *key)
+void aes_decrypt_chunk(uint8_t enc_buf[AES_CHUNK_LEN], uint8_t *key_bytes)
 {
-    aes256_context ctx;
-    memset(&ctx, 0, sizeof(ctx));
-
-    aes256_init(&ctx, key);
-    aes256_decrypt_ecb(&ctx, enc_buf);
-    aes256_done(&ctx);
+    AES_KEY key;
+    AES_set_decrypt_key(key_bytes, 256, &key);
+    AES_ecb_encrypt(enc_buf, enc_buf, &key, AES_CHUNK_LEN);
 }
 
 void xor_buffer(uint8_t *buffer, size_t buffer_size, uint8_t *key, size_t key_size)

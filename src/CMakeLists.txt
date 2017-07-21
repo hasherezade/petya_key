@@ -5,13 +5,11 @@ set (hdrs
 	ec.h
 	common.h
 	endian.h
-	aes256.h
 	base58.h
 )
 
 set (srcs
 	main.cpp
-	aes256.cpp
 	base58.cpp
 )
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
