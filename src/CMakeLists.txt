@@ -14,7 +14,8 @@ set (srcs
 	aes256.cpp
 	base58.cpp
 )
-
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcrypto")
-add_executable (petya_key ${hdrs} ${srcs})
+
+add_executable (${PROJECT_NAME} ${hdrs} ${srcs})
 
