@@ -103,9 +103,10 @@ bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY
     }
     fseek(fp, 0, SEEK_END);
     size_t file_size = ftell(fp);
+#ifdef DEBUG
     printf("---\n");
     printf("file_size: %d = %#x\n", file_size, file_size);
-
+#endif
     fseek(fp, 0, SEEK_SET);
 
     const size_t max_line = 0x100;
@@ -126,8 +127,10 @@ bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY
     uint8_t decoded[max_decoded] = { 0 };
 
     size_t out_len = decode_base58(b58_str, b58_len, decoded, max_decoded);
+#ifdef DEBUG
     bbp_print_hex("converted  ", decoded, out_len);
-
+    printf("---\n");
+#endif
     if (out_len < PUBLIC_KEY_LEN + AES_CHUNK_LEN) {
         printf("Decoded content is too short!\n");
         return false;
@@ -135,8 +138,6 @@ bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY
 
     memcpy(victim_pub_key, decoded, PUBLIC_KEY_LEN);
     memcpy(enc_buf, decoded + PUBLIC_KEY_LEN, AES_CHUNK_LEN);
-
-    printf("---\n");
     return true;
 }
 
@@ -152,8 +153,9 @@ void sha512(uint8_t *in_buffer, size_t in_buffer_len, uint8_t out_hash[SHA512_DI
 const EC_KEY* load_session_key(uint8_t session_pub[PUBLIC_KEY_LEN])
 {
 // load victim's public key:
+#ifdef DEBUG
     bbp_print_hex("victim pub:  ", session_pub, PUBLIC_KEY_LEN);
-
+#endif
     // init empty OpenSSL EC keypair
     EC_KEY *session_key = EC_KEY_new_by_curve_name(NID_secp192k1);
     if (!session_key) {
@@ -185,7 +187,6 @@ size_t get_expanded_size(uint8_t *secret, size_t secret_len)
     uint32_t first_dword = 0;
     memcpy(&first_dword, secret, sizeof(uint32_t));
     first_dword = bbp_swap32(first_dword);
-    printf("---\n");
 
     uint32_t counter = 0x20;
     uint32_t curr = 0;
@@ -208,12 +209,15 @@ uint8_t *expand_secret(uint8_t* secret, size_t out_secret_len)
     const size_t secret_data_size = get_expanded_size(secret, out_secret_len);
     uint8_t *secret_data = (uint8_t *)OPENSSL_malloc(secret_data_size);
     memset(secret_data, 0, secret_data_size);
-
+#ifdef DEBUG
     printf("secret size: %d\n", secret_data_size);
+#endif
     size_t secret_offset = secret_data_size - out_secret_len;
 
     memcpy(secret_data + secret_offset, secret, out_secret_len);
+#ifdef DEBUG
     bbp_print_hex("secret buffer:        ", secret_data, secret_data_size);
+#endif
     return secret_data;
 }
 
@@ -230,16 +234,19 @@ bool derive_secret_hash(const EC_POINT *pub_key, EC_KEY *key, uint8_t out_buffer
 
     // derive the shared secret:
     size_t out_secret_len = ECDH_compute_key(secret, secret_len, pub_key, key, NULL);
+#ifdef DEBUG
     printf("Got secret len: %d = %#x\n", out_secret_len, out_secret_len);
     bbp_print_hex("secret:        ", secret, out_secret_len);
-
+#endif
     // expand the secret:
     uint8_t *to_hash = expand_secret(secret, out_secret_len);
     size_t to_hash_size = get_expanded_size(secret, out_secret_len);
     
     sha512(to_hash, to_hash_size, out_buffer);
+#ifdef DEBUG
     bbp_print_hex("SHA512:        ", out_buffer, SHA512_DIGEST_LENGTH);
     printf("---\n");
+#endif
     OPENSSL_free(secret);
     OPENSSL_free(to_hash);
     return true;
@@ -318,8 +325,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 //-----
+#ifdef DEBUG
     bbp_print_hex("enc. Salsa:    ", salsa_key, AES_CHUNK_LEN);
-
+#endif
     uint8_t sha512_buffer[SHA512_DIGEST_LENGTH] = {0};
     if (!derive_secret_hash(pub_key, key, sha512_buffer)) {
         printf("Cannot derive the secret!\n");
@@ -327,8 +335,10 @@ int main(int argc, char* argv[])
     }
 
     aes_decrypt_chunk(salsa_key, sha512_buffer);
+#ifdef DEBUG
     bbp_print_hex("de-AES Salsa:  ", salsa_key, AES_CHUNK_LEN);
-
+#endif
+    printf("---\n");
     int res = -1;
     if (my_petya == PETYA_GOLDEN) {
         bbp_print_hex("[+] Your key   ", salsa_key, AES_CHUNK_LEN);
@@ -336,7 +346,9 @@ int main(int argc, char* argv[])
     }
     else if (my_petya == PETYA_RED || my_petya == PETYA_GREEN) {
         xor_buffer(salsa_key, AES_CHUNK_LEN, session_pub, PUBLIC_KEY_LEN);
+#ifdef DEBUG
         bbp_print_hex("de-XOR Salsa:  ", salsa_key, AES_CHUNK_LEN);
+#endif
         printf("[+] Your key   : %.16s\n", salsa_key);
         res = 0; //success
     }
