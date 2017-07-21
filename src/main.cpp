@@ -254,7 +254,7 @@ bool derive_secret_hash(const EC_POINT *pub_key, EC_KEY *key, uint8_t out_buffer
 
 Petya_t choose_variant()
 {
-    printf("Choose one of the supported variants:\nr - Red Petya\ng - Green Petya\nd - Goldeneye\n");
+    printf("Choose one of the supported variants:\nr - Red Petya\ng - Green Petya or Mischa\nd - Goldeneye\n");
     printf("[*] My petya is: ");
     char code = getchar();
     Petya_t type = PETYA_UNK;
