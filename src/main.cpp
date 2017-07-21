@@ -277,12 +277,18 @@ int main(int argc, char* argv[])
     EC_KEY *key = bbp_ec_new_keypair(priv_bytes);
     if (!key) {
         puts("Unable to create keypair");
+#ifdef _WINDOWS
+        system("pause");
+#endif
         return -1;
     }
 
     const BIGNUM *priv_bn = EC_KEY_get0_private_key(key);
     if (!priv_bn) {
         puts("Unable to decode private key");
+#ifdef _WINDOWS
+        system("pause");
+#endif
         return -1;
     }
 
@@ -302,6 +308,9 @@ int main(int argc, char* argv[])
         printf("Victim file: %s\n", victim_file);
     } else {
         printf("[-] Parameter missing! Supply a file containing the ID from the victim\n");
+#ifdef _WINDOWS
+    system("pause");
+#endif
         return -1;
     }
     my_petya = choose_variant();
@@ -311,17 +320,26 @@ int main(int argc, char* argv[])
     }
     if (!load_victim_data(victim_file, session_pub, salsa_key, my_petya)) {
         printf("Failed loading victim's data!\n");
+#ifdef _WINDOWS
+        system("pause");
+#endif
         return -1;
     }
 
     const EC_KEY *session_key = load_session_key(session_pub);
     if (session_key == NULL) {
         printf("Cannot load victim's public key!\n");
+#ifdef _WINDOWS
+        system("pause");
+#endif
         return -1;
     }
     const EC_POINT *pub_key = EC_KEY_get0_public_key(session_key);
     if (pub_key == NULL) {
         printf("Cannot fetch victim's public key!\n");
+#ifdef _WINDOWS
+        system("pause");
+#endif
         return -1;
     }
 //-----
@@ -356,6 +374,9 @@ int main(int argc, char* argv[])
     //cleanup:
     // release keypair
     EC_KEY_free(key);
+#ifdef _WINDOWS
+    system("pause");
+#endif
     return res;
 }
 
