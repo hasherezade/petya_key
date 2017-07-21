@@ -1,4 +1,4 @@
-# petya_key_poc
+# petya_key
 A decoder for Petya victim keys, using the Janus' masterkey</br>
 It supports:
 + Red Petya
