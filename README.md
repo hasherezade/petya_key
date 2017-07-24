@@ -8,7 +8,7 @@ It supports:
 Read more about identifying Petyas: https://blog.malwarebytes.com/cybercrime/2017/07/keeping-up-with-the-petyas-demystifying-the-malware-family/
 <hr/>
 <b>
-WARNING: This is a beta version. In case of any problems, please contact me.
+DISCLAIMER: Those tools are provided as is and you are using them at your own risk. I am not responsible for any damage or lost data.
 </b>
 <hr/>
 Usage:
