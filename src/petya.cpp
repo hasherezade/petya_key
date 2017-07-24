@@ -32,6 +32,16 @@ bool is_infected(FILE *fp)
     return has_bootloader;
 }
 
+bool check_onion_sector(FILE *fp, size_t onion_sector_num)
+{
+    char http_pattern[] = "http://";
+    const size_t http_offset = onion_sector_num * SECTOR_SIZE + HTTP_OFFSET;
+    bool has_http = check_pattern(fp, http_offset, http_pattern, sizeof(http_pattern));
+    if (has_http) printf("[+] Petya http address detected!\n");
+
+    return has_http;
+}
+
 char* fetch_data(FILE *fp, const size_t offset, const size_t in_size)
 {
     char* in_buf = new char[in_size];
@@ -47,6 +57,9 @@ char* fetch_data(FILE *fp, const size_t offset, const size_t in_size)
 
 char* fetch_victim_id(FILE *fp, size_t onion_sector_num)
 {
+    if (!check_onion_sector(fp, onion_sector_num)) {
+        return NULL;
+    }
     size_t offset = onion_sector_num * SECTOR_SIZE + VICTIM_ID_OFFSET;
     char *data = fetch_data(fp, offset, VICTIM_ID_MAXSIZE);
     if (strlen(data) == 0) {
