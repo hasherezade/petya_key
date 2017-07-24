@@ -15,6 +15,7 @@
 #include "ec.h"
 #include "common.h"
 #include "base58.h"
+#include "petya.h"
 
 #define PUBLIC_KEY_LEN 49
 #define AES_CHUNK_LEN 16
@@ -91,26 +92,8 @@ size_t truncated_size(const char *str)
     return out_size;
 }
 
-bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t enc_buf[AES_CHUNK_LEN], Petya_t &my_petya)
+bool load_victim_data(char* line, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t enc_buf[AES_CHUNK_LEN], Petya_t &my_petya)
 {
-    FILE *fp = fopen(victim_file, "rb");
-    if (!fp) {
-        printf("Cannot open victim's file: %s\n", victim_file);
-        return false;
-    }
-    fseek(fp, 0, SEEK_END);
-    size_t file_size = ftell(fp);
-#ifdef DEBUG
-    printf("---\n");
-    printf("file_size: %d = %#x\n", file_size, file_size);
-#endif
-    fseek(fp, 0, SEEK_SET);
-
-    const size_t max_line = 0x100;
-    char line[max_line] = { 0 };
-    fgets(line, max_line, fp);
-    fclose(fp);
-
     char* b58_str = line;
     if (my_petya == PETYA_RED || my_petya == PETYA_GREEN) {
         b58_str += 2; //ommit the first two characters
@@ -137,6 +120,30 @@ bool load_victim_data(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY
     memcpy(enc_buf, decoded + PUBLIC_KEY_LEN, AES_CHUNK_LEN);
     return true;
 }
+
+bool load_victim_file(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t enc_buf[AES_CHUNK_LEN], Petya_t &my_petya)
+{
+    FILE *fp = fopen(victim_file, "rb");
+    if (!fp) {
+        printf("Cannot open victim's file: %s\n", victim_file);
+        return false;
+    }
+    fseek(fp, 0, SEEK_END);
+    size_t file_size = ftell(fp);
+#ifdef DEBUG
+    printf("---\n");
+    printf("file_size: %d = %#x\n", file_size, file_size);
+#endif
+    fseek(fp, 0, SEEK_SET);
+
+    const size_t max_line = 0x100;
+    char line[max_line] = { 0 };
+    fgets(line, max_line, fp);
+    fclose(fp);
+
+    return load_victim_data(line, victim_pub_key, enc_buf, my_petya);
+}
+
 
 void sha512(uint8_t *in_buffer, size_t in_buffer_len, uint8_t out_hash[SHA512_DIGEST_LENGTH])
 {
@@ -267,9 +274,41 @@ Petya_t choose_variant()
 int main(int argc, char* argv[])
 {
     Petya_t my_petya = PETYA_UNK;
-    bool make_test = (argc >= 2) ? false : true;
+    if (argc < 2) {
+        printf("Supply the disk dump as a parameter!\n");
+        return -1;
+    }
+    char* filename = argv[1];
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        printf("Cannot open file %s\n", filename);
+        return -1;
+    }
 
-    uint8_t priv[PRIV_KEY_SIZE];
+    if (is_infected(fp)) {
+        printf("[+] Petya FOUND on the disk!\n");
+    } else {
+        printf("[-] Petya not found on the disk!\n");
+        return -1;
+    }
+    my_petya = choose_variant();
+    if (my_petya == PETYA_UNK) {
+       printf("Invalid param!\n");
+       return -1;
+    }
+    size_t onion_sector_num = REDGREEN_ONION_SECTOR_NUM;   
+    if (my_petya == PETYA_GOLDEN) {
+        onion_sector_num = GOLDEN_ONION_SECTOR_NUM;
+    }
+    char *victim_id = fetch_victim_id(fp, onion_sector_num);
+    if (victim_id == NULL) {
+        printf("Failed to load victiim ID\n");
+        return -1;
+    }
+    printf("[+] Victim ID: %s\n", victim_id);
+
+    //the private key:
+    
     //create a keypair basing on the private key:
     EC_KEY *key = bbp_ec_new_keypair(priv_bytes);
     if (!key) {
@@ -288,34 +327,15 @@ int main(int argc, char* argv[])
 #endif
         return -1;
     }
-
+#ifdef DEBUG
+    uint8_t priv[PRIV_KEY_SIZE];
     BN_bn2bin(priv_bn, priv);
     bbp_print_hex("priv:        ", priv, sizeof(priv));
-
-    if (make_test) {
-        test_janus_privkey(key);
-    }
-
+#endif
     uint8_t session_pub[PUBLIC_KEY_LEN] = { 0 };
     uint8_t salsa_key[AES_CHUNK_LEN] = { 0 };
-    
-    char *victim_file = NULL;
-    if (argc >= 2) {
-        victim_file = argv[1];
-        printf("Victim file: %s\n", victim_file);
-    } else {
-        printf("[-] Parameter missing! Supply a file containing the ID from the victim\n");
-#ifdef _WINDOWS
-    system("pause");
-#endif
-        return -1;
-    }
-    my_petya = choose_variant();
-    if (my_petya == PETYA_UNK) {
-       printf("Invalid param!\n");
-       return -1;
-    }
-    if (!load_victim_data(victim_file, session_pub, salsa_key, my_petya)) {
+
+    if (!load_victim_data(victim_id, session_pub, salsa_key, my_petya)) {
         printf("Failed loading victim's data!\n");
 #ifdef _WINDOWS
         system("pause");
@@ -376,4 +396,5 @@ int main(int argc, char* argv[])
 #endif
     return res;
 }
+
 
