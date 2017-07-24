@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
     }
     char *victim_id = fetch_victim_id(fp, onion_sector_num);
     if (victim_id == NULL) {
-        printf("Failed to load victiim ID\n");
+        printf("Failed to load victim ID\n");
         return -1;
     }
     printf("[+] Victim ID: %s\n", victim_id);
