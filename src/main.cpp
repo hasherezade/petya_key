@@ -233,6 +233,32 @@ Petya_t choose_variant()
     return type;
 }
 
+char* fetch_disk_input(const char* filename, Petya_t &my_petya)
+{
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        printf("Cannot open file %s\n", filename);
+        return NULL;
+    }
+    if (is_infected(fp)) {
+        printf("[+] Petya FOUND on the disk!\n");
+    } else {
+        printf("[-] Petya not found on the disk!\n");
+        return NULL;
+    }
+    my_petya = choose_variant();
+    if (my_petya == PETYA_UNK) {
+       printf("Invalid param!\n");
+       return NULL;
+    }
+    size_t onion_sector_num = REDGREEN_ONION_SECTOR_NUM;   
+    if (my_petya == PETYA_GOLDEN) {
+        onion_sector_num = GOLDEN_ONION_SECTOR_NUM;
+    }
+    char *victim_id = fetch_victim_id(fp, onion_sector_num);
+    return victim_id;
+}
+
 int main(int argc, char* argv[])
 {
     Petya_t my_petya = PETYA_UNK;
@@ -240,35 +266,13 @@ int main(int argc, char* argv[])
         printf("Supply the disk dump as a parameter!\n");
         return -1;
     }
-    char* filename = argv[1];
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL) {
-        printf("Cannot open file %s\n", filename);
-        return -1;
-    }
 
-    if (is_infected(fp)) {
-        printf("[+] Petya FOUND on the disk!\n");
-    } else {
-        printf("[-] Petya not found on the disk!\n");
-        return -1;
-    }
-    my_petya = choose_variant();
-    if (my_petya == PETYA_UNK) {
-       printf("Invalid param!\n");
-       return -1;
-    }
-    size_t onion_sector_num = REDGREEN_ONION_SECTOR_NUM;   
-    if (my_petya == PETYA_GOLDEN) {
-        onion_sector_num = GOLDEN_ONION_SECTOR_NUM;
-    }
-    char *victim_id = fetch_victim_id(fp, onion_sector_num);
+    char* victim_id = fetch_disk_input(argv[1], my_petya);
     if (victim_id == NULL) {
         printf("Failed to load victim ID\n");
         return -1;
     }
     printf("[+] Victim ID: %s\n", victim_id);
-
     //the private key:
     
     //create a keypair basing on the private key:
