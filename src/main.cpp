@@ -20,7 +20,7 @@
 #define PUBLIC_KEY_LEN 49
 #define AES_CHUNK_LEN 16
 #define AES_KEY_LEN 32
-//#define DISK_INPUT - enable reading the victim ID directly from the disk
+//#define DISK_INPUT // enable reading the victim ID directly from the disk
 
 typedef enum Petyas { PETYA_RED = 0, PETYA_GREEN = 1, PETYA_GOLDEN = 2, PETYA_UNK = -1} Petya_t;
 
