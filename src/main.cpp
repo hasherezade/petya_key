@@ -20,6 +20,7 @@
 #define PUBLIC_KEY_LEN 49
 #define AES_CHUNK_LEN 16
 #define AES_KEY_LEN 32
+//#define DISK_INPUT - enable reading the victim ID directly from the disk
 
 typedef enum Petyas { PETYA_RED = 0, PETYA_GREEN = 1, PETYA_GOLDEN = 2, PETYA_UNK = -1} Petya_t;
 
@@ -82,30 +83,6 @@ bool load_victim_data(char* line, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_
     memcpy(enc_buf, decoded + PUBLIC_KEY_LEN, AES_CHUNK_LEN);
     return true;
 }
-
-bool load_victim_file(const char* victim_file, uint8_t victim_pub_key[PUBLIC_KEY_LEN], uint8_t enc_buf[AES_CHUNK_LEN], Petya_t &my_petya)
-{
-    FILE *fp = fopen(victim_file, "rb");
-    if (!fp) {
-        printf("Cannot open victim's file: %s\n", victim_file);
-        return false;
-    }
-    fseek(fp, 0, SEEK_END);
-    size_t file_size = ftell(fp);
-#ifdef DEBUG
-    printf("---\n");
-    printf("file_size: %d = %#x\n", file_size, file_size);
-#endif
-    fseek(fp, 0, SEEK_SET);
-
-    const size_t max_line = 0x100;
-    char line[max_line] = { 0 };
-    fgets(line, max_line, fp);
-    fclose(fp);
-
-    return load_victim_data(line, victim_pub_key, enc_buf, my_petya);
-}
-
 
 void sha512(uint8_t *in_buffer, size_t in_buffer_len, uint8_t out_hash[SHA512_DIGEST_LENGTH])
 {
@@ -233,6 +210,38 @@ Petya_t choose_variant()
     return type;
 }
 
+//input variant #1: read the victim ID from file
+char* fetch_file_input(const char* filename, Petya_t &my_petya)
+{
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        printf("Cannot open victim's file: %s\n", filename);
+        return NULL;
+    }
+    my_petya = choose_variant();
+    if (my_petya == PETYA_UNK) {
+       printf("Invalid param!\n");
+       return NULL;
+    }
+    printf("Victim file: %s\n", filename);
+    fseek(fp, 0, SEEK_END);
+    size_t file_size = ftell(fp);
+#ifdef DEBUG
+    printf("---\n");
+    printf("file_size: %d = %#x\n", file_size, file_size);
+#endif
+    fseek(fp, 0, SEEK_SET);
+
+    const size_t max_line = 0x100;
+    char *line = new char[max_line];
+    if (line) {
+        fgets(line, max_line, fp);
+    }
+    fclose(fp);
+    return line;
+}
+
+//input variant #2: read the victim ID from the infected disk
 char* fetch_disk_input(const char* filename, Petya_t &my_petya)
 {
     FILE *fp = fopen(filename, "rb");
@@ -263,11 +272,22 @@ int main(int argc, char* argv[])
 {
     Petya_t my_petya = PETYA_UNK;
     if (argc < 2) {
-        printf("Supply the disk dump as a parameter!\n");
+#ifdef DISK_INPUT
+        printf("[-] Parameter missing! Supply the infected disk!\n");
+#else
+        printf("[-] Parameter missing! Supply a file containing the ID from the victim\n");
+#endif
+
+#ifdef _WINDOWS
+    system("pause");
+#endif
         return -1;
     }
-
+#ifdef DISK_INPUT
     char* victim_id = fetch_disk_input(argv[1], my_petya);
+#else
+    char* victim_id = fetch_file_input(argv[1], my_petya);
+#endif
     if (victim_id == NULL) {
         printf("Failed to load victim ID\n");
         return -1;
@@ -298,9 +318,9 @@ int main(int argc, char* argv[])
     BN_bn2bin(priv_bn, priv);
     bbp_print_hex("priv:        ", priv, sizeof(priv));
 #endif
+
     uint8_t session_pub[PUBLIC_KEY_LEN] = { 0 };
     uint8_t salsa_key[AES_CHUNK_LEN] = { 0 };
-
     if (!load_victim_data(victim_id, session_pub, salsa_key, my_petya)) {
         printf("Failed loading victim's data!\n");
 #ifdef _WINDOWS
@@ -357,6 +377,7 @@ int main(int argc, char* argv[])
     //cleanup:
     // release keypair
     EC_KEY_free(key);
+    delete []victim_id;
 #ifdef _WINDOWS
     system("pause");
 #endif
