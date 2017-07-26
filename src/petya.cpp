@@ -47,7 +47,6 @@ bool check_onion_sector(FILE *fp, size_t onion_sector_num)
     if (has_http) {
         printf("[+] Petya http address detected!\n");
     }
-    printf("[-] Petya http address not found: %#x\n", http_offset);
     return has_http;
 }
 
