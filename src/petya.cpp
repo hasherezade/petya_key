@@ -35,10 +35,19 @@ bool is_infected(FILE *fp)
 bool check_onion_sector(FILE *fp, size_t onion_sector_num)
 {
     char http_pattern[] = "http://";
-    const size_t http_offset = onion_sector_num * SECTOR_SIZE + HTTP_OFFSET;
-    bool has_http = check_pattern(fp, http_offset, http_pattern, sizeof(http_pattern));
-    if (has_http) printf("[+] Petya http address detected!\n");
-
+    size_t pattern_len = strlen(http_pattern);
+    size_t http_offset = onion_sector_num * SECTOR_SIZE + HTTP_OFFSET;
+    bool has_http = check_pattern(fp, http_offset, http_pattern, pattern_len);
+    if (has_http) {
+        printf("[+] Petya http address detected!\n");
+        return has_http;
+    }
+    http_offset = onion_sector_num * SECTOR_SIZE + HTTP_OFFSET_RED;
+    has_http = check_pattern(fp, http_offset, http_pattern, pattern_len);
+    if (has_http) {
+        printf("[+] Petya http address detected!\n");
+    }
+    printf("[-] Petya http address not found: %#x\n", http_offset);
     return has_http;
 }
 
