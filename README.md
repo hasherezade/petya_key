@@ -13,7 +13,7 @@ DISCLAIMER: Those tools are provided as is and you are using them at your own ri
 <hr/>
 Usage:
 <pre>
-./petya_key_poc [victim_data]
+./petya_key [victim_data]
 </pre>
 where the 'victim_data' is a file containing the 'personal decryption code' displayed by the bootlocker</br></br>
 1) Save your 'personal decryption code' as a continuous string, without separators. Example of the valid file content:
@@ -22,7 +22,7 @@ e2NKAXKGX7YFYUHPUuwrcfZ6FUkkYtRUdvzqRUwacPgjMvyYr8mH5Pw4X8Wdt6XgLrK7G7m1TVVeBdVz
 </pre><br/>
 2) Supply the saved file to the decoder:<br/>
 <pre>
-./petya_key_poc saved_id.txt
+./petya_key saved_id.txt
 </pre>
 Choose your version of Petya from the menu. If the given data is valid, you will get your key, i.e:
 <pre>
