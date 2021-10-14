@@ -33,7 +33,7 @@ Choose your version of Petya from the menu. If the given data is valid, you will
 In order to decrypt MFT, supply the generated key to the bootlocker.<br/>
 In order to decrypt <b>files</b> you need supply the key to an appropriate decryption tool.<br/>
 For <b>Mischa</b>:
-https://drive.google.com/open?id=0Bzb5kQFOXkiSWUZ6dndxZkN1YlE
+https://github.com/hasherezade/petya_key/files/7348787/mischa_decrypter.zip
 <br/>
 For <b>Goldeneye</b>:
-https://drive.google.com/open?id=0Bzb5kQFOXkiSdTZkUUYxZ0xEeDg
+https://github.com/hasherezade/petya_key/files/7348772/golden_decrypter.zip
