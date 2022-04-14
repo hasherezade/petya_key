@@ -33,14 +33,11 @@ Choose your version of Petya from the menu. If the given data is valid, you will
 [+] Your key   : TxgTCXnpUPSeR2U7
 ```
 
-3) <b>Before unlocking attempt I strongly recommend you to make a dump of the full disk.</b> Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
+3) **Before unlocking attempt I strongly recommend you to make a dump of the full disk.** Some versions of Petya are buggy. For example they may hang during decryption and corrupt your data.
 ---
 
 In order to decrypt MFT, supply the generated key to the bootlocker.<br/>
-In order to decrypt <b>files</b> you need supply the key to an appropriate decryption tool.<br/>
-For **Mischa**:
-https://github.com/hasherezade/petya_key/files/7348787/mischa_decrypter.zip
+In order to decrypt **files** you need supply the key to an appropriate decryption tool.
 
-
-For **Goldeneye**:
-https://github.com/hasherezade/petya_key/files/7348772/golden_decrypter.zip
++ For **Mischa**: https://github.com/hasherezade/petya_key/files/7348787/mischa_decrypter.zip
++ For **Goldeneye**: https://github.com/hasherezade/petya_key/files/7348772/golden_decrypter.zip
