@@ -5,7 +5,9 @@ It supports:
 + Green Petya (both versions) + Mischa
 + Goldeneye (bootlocker + files)
 
-Read more about identifying Petyas: https://blog.malwarebytes.com/cybercrime/2017/07/keeping-up-with-the-petyas-demystifying-the-malware-family/
+Read more about identifying Petya versions [here](https://blog.malwarebytes.com/cybercrime/2017/07/keeping-up-with-the-petyas-demystifying-the-malware-family/)
+
+[⏬ Download tools](https://github.com/hasherezade/petya_key/releases)
 
 ---
 
